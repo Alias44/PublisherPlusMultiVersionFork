@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Title>[1.3 - 1.5] PublisherPlus FORK</Title>
+  <Excluded>
+    <exclude>.git</exclude>
+    <exclude>build</exclude>
+    <exclude>Source</exclude>
+  </Excluded>
+</Configuration>

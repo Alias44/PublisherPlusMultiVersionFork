@@ -1,6 +1,6 @@
 # PublisherPlus
 A multi-version fork from NightmareCorporation of PublisherPlus by jaxe.
-Rather than applying the ReleaseTarget-Method this fork contains both sours and built assemblies for ease of maintenance. Cross-Version compatiblity is achieved by following appended guide.
+Rather than applying the ReleaseTarget-Method this fork contains both source and built assemblies for ease of maintenance. Cross-Version compatiblity is achieved by following appended guide.
 
 
 [Link to Cross-Version Steam Guide](https://steamcommunity.com/sharedfiles/filedetails/?id=2872227699)
