@@ -8,6 +8,7 @@ using UnityEngine;
 using Verse;
 using Verse.Sound;
 using Verse.Steam;
+using GridLayout = Verse.GridLayout;
 
 namespace PublisherPlus.Interface
 {

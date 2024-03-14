@@ -9,7 +9,7 @@ namespace PublisherPlus
   {
     public const string Id = "PublisherPlus";
     public const string Name = Id;
-    public const string Version = "1.8.0";
+    public const string Version = "1.9.0";
 
     public static bool ExperimentalMode { get; set; }
 
