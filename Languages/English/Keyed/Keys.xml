@@ -19,4 +19,10 @@
   <PublisherPlus.ContentDirectory>Content Folder</PublisherPlus.ContentDirectory>
   <PublisherPlus.FinalInformation>Ready to upload: {0}\n\nSteam File ID: {1}\n\n\nBe sure that you are the author of this work and that all information is correct before pressing the Publish button.</PublisherPlus.FinalInformation>
   <PublisherPlus.NewFileId>(New)</PublisherPlus.NewFileId>
+  
+  <!-- Settings -->
+  <PublisherPlus.Settings.Title>Publisher Plus</PublisherPlus.Settings.Title>
+  <PublisherPlus.Settings.GitIgnore>Use gitignore file</PublisherPlus.Settings.GitIgnore>
+  <PublisherPlus.Settings.GitIgnore.Tooltip>If the mod directory contains a .gitignore file, it will be used to filter files/ folders before uploading to the workshop (items matched by the ignore file will not be listed in the mod contents dialogue prior to upload). </PublisherPlus.Settings.GitIgnore.Tooltip>
+  
 </LanguageData>
