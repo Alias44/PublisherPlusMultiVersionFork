@@ -1,21 +1,29 @@
-﻿using System;
+﻿using GitignoreParserNet;
+using PublisherPlus.Patch;
+using Steamworks;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Xml.Linq;
-using PublisherPlus.Patch;
-using Steamworks;
 using Verse;
 using Verse.Steam;
 using Version = System.Version;
 
 namespace PublisherPlus.Data
 {
-  internal class WorkshopPackage : WorkshopUploadable
+    /// <summary>
+    /// A mod folder to be uploaded to the workshop. Handles most of the logic for file IO, aggregation, and filtering.
+    /// </summary>
+    internal class WorkshopPackage : WorkshopUploadable
   {
+    private static readonly string separator = Path.DirectorySeparatorChar.ToString();
+
     private const string TempFolderName = "PublisherPlus\\Temp";
     private const string ConfigFileName = "_PublisherPlus.xml";
     private const string PublishedFileIdFilePath = "About\\PublishedFileId.txt";
+    private const string GitIgnorePath = ".gitignore";
 
     private static readonly DirectoryInfo TempDirectory = new DirectoryInfo(Path.Combine(GenFilePaths.ConfigFolderPath, TempFolderName));
 
@@ -86,24 +94,42 @@ namespace PublisherPlus.Data
       }
     }
 
-    public string GetRelativePath(FileSystemInfo item) => item.FullName.Substring(SourceDirectory.FullName.Length + 1);
+    /// <summary>
+    /// Gets the path relative to the root <see cref="SourceDirectory">, if the item is a directory, appends a trailing slash
+    /// </summary>
+    public string GetRelativePath(FileSystemInfo item) => item.FullName.Substring(SourceDirectory.FullName.Length + 1) + (item.IsDirectory() ? separator : "");
 
+    /// <summary>
+    /// Sets the <see cref="_items"/> dictionary to all files and directories in <see cref="SourceDirectory"/> (excluding <see cref="ConfigFileName"/>)
+    /// </summary>
     private void GetAllContent()
     {
-      var list = new List<FileSystemInfo>();
+      var contents = SourceDirectory.GetFileSystemInfos("*", SearchOption.AllDirectories)
+                .OrderBy(item => item.FullName)
+                .Where(item => item.Name != ConfigFileName);
 
-      list.AddRange(SourceDirectory.GetFiles("*.*", SearchOption.AllDirectories));
-      list.AddRange(SourceDirectory.GetDirectories("*.*", SearchOption.AllDirectories));
+      // apply .gitignore
+      string ignoreFile = Path.Combine(SourceDirectory.FullName, GitIgnorePath);
+
+      if (PublisherPlusSettings.useGitIgnore && File.Exists(ignoreFile))
+      {
+         var parse = new GitignoreParser(ignoreFile, Encoding.UTF8);
+
+         contents = contents.Where(dir => parse.Accepts(separator + GetRelativePath(dir)));
+      }
+
 
       _items.Clear();
 
-      foreach (var item in list.OrderBy(item => item.FullName).ToArray())
+      foreach (var path in contents)
       {
-        if (item.Name == ConfigFileName) { continue; }
-        _items.Add(item, true);
+        _items.Add(path, true);
       }
     }
 
+    /// <summary>
+    /// Loads data from <see cref="ConfigFileName"/> and populates mod info and file exclusions
+    /// </summary>
     private void GetConfig()
     {
       var configFile = Path.Combine(SourceDirectory.FullName, ConfigFileName);
@@ -117,21 +143,25 @@ namespace PublisherPlus.Data
       var title = xml.Element(ns + "Title")?.Value;
       if (!title.NullOrEmpty()) { Title = title; }
 
-      var tags = xml.Element(ns + "Tags")?.Elements().Select(element => element.Value).ToArray();
-      if (Mod.ExperimentalMode && tags != null && tags.Length > 0) { Tags = new List<string>(tags); }
+      var tags = xml.Element(ns + "Tags")?.Elements().Select(element => element.Value).ToList();
+      if (Mod.ExperimentalMode && tags != null && tags.Count > 0) { Tags = tags; }
 
       var preview = xml.Element(ns + "Preview")?.Value;
       if (!preview.NullOrEmpty()) { Preview = preview; }
 
-      var excluded = xml.Element(ns + "Excluded")?.Elements().Select(element => element.Value);
-      if (excluded == null) { return; }
+      var exclusions = xml.Element(ns + "Excluded")?.Elements()
+          .Select(element => element.Value)
+          .Where(path => !path.NullOrEmpty())
+          .Select(path => Path.Combine(SourceDirectory.FullName, path));
 
-      foreach (var path in excluded)
+      if (exclusions == null) { return; }
+
+      // find _items that match the loaded exclusion filters so that they can be exculded again
+      var excludedPaths = _items.Keys.Where(item => exclusions.Any(exclude => item.FullName.StartsWith(exclude, StringComparison.OrdinalIgnoreCase)));
+
+      foreach (var path in excludedPaths)
       {
-        if (path.NullOrEmpty()) { continue; }
-
-        var exclude = Path.Combine(SourceDirectory.FullName, path);
-        foreach (var item in _items.Keys.ToArray().Where(item => item.FullName.StartsWith(exclude, StringComparison.OrdinalIgnoreCase))) { _items[item] = false; }
+          _items[path] = false;
       }
     }
 
@@ -139,6 +169,9 @@ namespace PublisherPlus.Data
 
     private IEnumerable<FileSystemInfo> GetExcluded() => _items.Where(item => !item.Value).Select(item => item.Key);
 
+    /// <summary>
+    /// Simplifies <see cref="GetExcluded"/> to remove unncessary branches
+    /// </summary>
     private IEnumerable<string> GetExcludedPaths()
     {
       var list = new List<string>();

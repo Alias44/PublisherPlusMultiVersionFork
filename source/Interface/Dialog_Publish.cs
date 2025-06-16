@@ -12,6 +12,9 @@ using GridLayout = Verse.GridLayout;
 
 namespace PublisherPlus.Interface
 {
+  /// <summary>
+  /// Mostly code to handle rendering and interacting with the upload dialouges
+  /// </summary>
   internal class Dialog_Publish : Window
   {
     private const float Padding = 12f;
@@ -160,9 +163,9 @@ namespace PublisherPlus.Interface
           var item = _pack.AllContent.ElementAt(i);
           var path = _pack.GetRelativePath(item);
 
-          var isDirectory = item is DirectoryInfo;
           var isIncluded = _pack.IsIncluded(item);
-          var include = filterList.CheckboxLabeled(isDirectory ? path.Bold() + "\\" : path, isIncluded, item.FullName, isIncluded ? (Color?) null : Color.red);
+          bool include = isIncluded;
+          filterList.CheckboxLabeled(item.IsDirectory() ? path.Bold() : path, ref include, item.FullName, isIncluded ? (Color?) null : Color.red);
 
           if (include != isIncluded) { _pack.SetIncluded(item, include); }
         }
